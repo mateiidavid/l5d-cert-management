@@ -21,7 +21,7 @@ Three different ways to manage your certificates with Linkerd. What we will be d
 # [--no-password (don't use pass to encrypt private key)]
 #
 # Example:
-$ step certificate create root.linkerd.cluster.local ca.crt ca.key --profile root-ca --no-password \ 
+$ step certificate create root.linkerd.cluster.local ca.crt ca.key --profile root-ca --no-password \
  --insecure #[--insecure required by --no-password]
 ```
 
@@ -72,8 +72,8 @@ the issuer?
 ```sh
 $ linkerd install \
  --identity-trust-anchors-file ca.crt \
- --identity-issuer-certificate-file issuer.crt \
- --identity-issuer-key-file issuer.key \
+ --identity-issuer-certificate-file identity.crt \
+ --identity-issuer-key-file identity.key \
  |kubectl apply -f -
 
 ```
@@ -157,6 +157,10 @@ $ linkerd upgrade \
   --identity-issuer-key-file new-issuer.key \
   |kubectl apply -f - 
 
+
+# Restart identity service so new identity issuer can be reloaded and used to sign
+# new leaves
+#
 # Check events if you want to see confirmation of changes being reloaded
 # Notice: identity service won't re-deploy since it reads the issuer from cm
 $ kubectl get events --field-selector reason=IssuerUpdated -n linkerd
@@ -165,8 +169,6 @@ $ kubectl get events --field-selector reason=IssuerUpdated -n linkerd
 #
 $ linkerd upgrade --identity-trust-anchors-file=new-ca.crt|kubectl apply -f -
 
-# If proxies do not come up in destination & injector pods, restart identity service
-# it might need to pick up certificate changes.
 ```
 
 In total, there are 3 upgrades when replacing both CA and issuer:
@@ -229,7 +231,7 @@ We will create both of these using `cert-manager` and `trust` CRDs.
 ```sh
 $ kubectl apply -f manifests/cert-manager-ca-issuer.yaml
 # Notice the fields here and why we can't mount it to a pod:
-$ kubectl get secret linkerd-identity-truist-roots -n cert-manager
+$ kubectl get secret linkerd-identity-trust-roots -n cert-manager
 
 $ kubectl apply -f manifests/cert-manager-identity-issuer.yaml
 $ kubectl get secrets -n linkerd
